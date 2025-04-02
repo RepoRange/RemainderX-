@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modular Exponentiation</title>
+    <style>
+      body {
+        background-color: #0a192f;
+        color: #e6f1ff;
+        font-family: "Arial", sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .card {
+        background-color: #112240;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+      }
+
+      .input-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .operator {
+        color: #64ffda;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      input {
+        width: 100px;
+        padding: 0.5rem;
+        border: 1px solid #233554;
+        border-radius: 4px;
+        background-color: #0a192f;
+        color: #e6f1ff;
+      }
+
+      button {
+        padding: 0.75rem;
+        background-color: #64ffda;
+        color: #0a192f;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: opacity 0.2s;
+      }
+
+      button:hover {
+        opacity: 0.9;
+      }
+
+      .result {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background-color: #1e2d4d;
+        border-radius: 4px;
+      }
+
+      .example {
+        background-color: #1e2d4d;
+        padding: 0.75rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+      }
+
+      .example-title {
+        color: #64ffda;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .documentation {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #233554;
+        color: #8892b0;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Modular Exponentiation Calculator</h2>
+      <div class="input-container">
+        <input type="number" id="base" placeholder="Base" value="3" />
+        <span class="operator">^</span>
+        <input type="number" id="exp" placeholder="Exponent" value="200" />
+        <span class="operator">mod</span>
+        <input type="number" id="mod" placeholder="Modulus" value="10" />
+        <button id="calculateBtn">Calculate</button>
+      </div>
+      <div class="result">
+        <h3>Result: <span id="result">-</span></h3>
+      </div>
+      <div class="example">
+        <div class="example-title">Quick Example:</div>
+        <p>2^3 mod 5 = 3</p>
+        <p>Because: 2³ = 8, and 8 ÷ 5 has remainder 3</p>
+      </div>
+      <div class="documentation">
+        <h4>How it works:</h4>
+        <p>
+          Calculate (base ^ exponent) % modulus efficiently.
+        </p>
+        <ul>
+          <li>Try: 2 ^ 3 mod 5</li>
+          <li>Or: 3 ^ 7 mod 10</li>
+        </ul>
+      </div>
+    </div>
+
+    <script type="module">
+      import createModule from "./mod_exp.js";
+
+      createModule().then((Module) => {
+        console.log("WASM Module Loaded Successfully");
+
+        // Wrap the WASM function using BigInt types for 64-bit support
+        let modExp = Module.cwrap("mod_exp", "bigint", ["bigint", "bigint", "bigint"]);
+
+        // Maximum unsigned 64-bit integer value (2^64 - 1)
+        const MAX_UINT64 = BigInt("18446744073709551615");
+
+        // Define the calculate function
+        const calculate = function () {
+          // Convert input values to BigInt
+          let base = BigInt(document.getElementById("base").value);
+          let exp = BigInt(document.getElementById("exp").value);
+          let mod = BigInt(document.getElementById("mod").value);
+
+          // Check if any input exceeds the 64-bit limit
+          if (base > MAX_UINT64 || exp > MAX_UINT64 || mod > MAX_UINT64) {
+            document.getElementById("result").innerText =
+              "Error: One or more input values exceed the maximum allowed for a 64-bit unsigned integer (18446744073709551615).";
+            return;
+          }
+
+          // Call the WASM function passing BigInt values
+          let result = modExp(base, exp, mod);
+          document.getElementById("result").innerText = `${result.toString()}`;
+        };
+
+        // Attach event listener to the Calculate button
+        document.getElementById("calculateBtn").addEventListener("click", calculate);
+      }).catch(err => {
+        console.error("Error loading WASM module:", err);
+      });
+    </script>
+  </body>
+</html>
+
